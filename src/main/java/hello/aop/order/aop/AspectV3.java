@@ -1,0 +1,49 @@
+package hello.aop.order.aop;
+
+
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.aop.support.AopUtils;
+
+@Slf4j
+@Aspect
+public class AspectV3 {
+
+    //hello.aop.order 패키지와 하위패키지
+    @Pointcut("execution(* hello.aop.order..*(..))")
+    private void allOrder(){} //pointcut signature
+
+    //클래스
+    //클래스 이픔 패턴이 *Service
+    @Pointcut("execution(* *..*Service.*(..))")
+    private void allService(){}
+
+
+    @Around("allOrder()")
+    public Object doLog(ProceedingJoinPoint joinPoint) throws Throwable{
+
+        log.info("[log] {}", joinPoint.getSignature());
+
+        return joinPoint.proceed();
+    }
+
+    //hello.aop.order 패키지의 하위 패키지 이면서 이름 패턴이 *Service
+    @Around("allOrder() && allService()")
+    public Object doTransaction(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        try {
+            log.info( "[트랜젝션 시작] {}", joinPoint.getSignature() );
+            Object result = joinPoint.proceed();
+            log.info( "[트랜잭션 커밋] {}", joinPoint.getSignature() );
+            return result;
+        } catch (Exception e) {
+            log.info( "[트랜잭션 RollBack {}", joinPoint.getSignature() );
+            throw e;
+        }finally{
+            log.info( "[리소스 릴리즈] {}", joinPoint.getSignature() );
+        }
+    }
+}
